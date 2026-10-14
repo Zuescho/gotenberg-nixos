@@ -128,6 +128,17 @@ in
   virtualisation.podman = {
     enable = true;
     dockerCompat = true;
+    # nix.gc does not touch /var/lib/containers. Drop unused images older than
+    # the 14 day generation window; the running image stays because it is in use.
+    autoPrune = {
+      enable = true;
+      dates = "Sun 05:40";
+      flags = [
+        "--all"
+        "--filter"
+        "until=336h"
+      ];
+    };
   };
 
   nix.settings = {

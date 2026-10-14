@@ -4,6 +4,10 @@ LAN-only [Gotenberg](https://gotenberg.dev/) for an ASP.NET ERechnung module run
 
 The VM is a NixOS Generation 2 guest on Windows Hyper-V. Nothing is published to the internet: nginx or Gotenberg binds the internal address, and the firewall accepts that port only from the IIS ranges in `hosts/gotenberg/site.nix`.
 
+## License
+
+Proprietary. All rights reserved. This repository is for internal use by Stadt Düren only.
+
 ## Pinned versions
 
 | Piece | Version | Source |

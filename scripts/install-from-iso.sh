@@ -20,10 +20,23 @@ if [[ ! -f "${REPO}/flake.nix" || ! -f "${REPO}/hosts/gotenberg/site.nix" ]]; th
   exit 1
 fi
 
-if grep -q 'REPLACE_ME' "${REPO}/hosts/gotenberg/site.nix"; then
-  echo "Edit ${REPO}/hosts/gotenberg/site.nix and replace the SSH key before installing." >&2
+# Only the key values count. The file header must be free to mention the
+# placeholder without blocking an install that already replaced the key.
+mapfile -t key_lines < <(awk '
+  /adminAuthorizedKeys[[:space:]]*=/ { capture = 1; next }
+  capture && /^[[:space:]]*\]/ { exit }
+  capture { print }
+' "${REPO}/hosts/gotenberg/site.nix")
+if [[ ${#key_lines[@]} -eq 0 ]]; then
+  echo "Set adminAuthorizedKeys in ${REPO}/hosts/gotenberg/site.nix before installing." >&2
   exit 1
 fi
+for line in "${key_lines[@]}"; do
+  if [[ "${line}" == *REPLACE_ME* ]]; then
+    echo "Replace the placeholder SSH key in adminAuthorizedKeys before installing." >&2
+    exit 1
+  fi
+done
 
 if [[ "${CONFIRM}" != "yes" ]]; then
   echo "This erases ${DISK} and installs NixOS. Re-run with CONFIRM=yes after checking lsblk." >&2
@@ -35,10 +48,15 @@ if [[ ! -b "${DISK}" ]]; then
   exit 1
 fi
 
-if findmnt -n -o TARGET "${DISK}" >/dev/null 2>&1; then
-  echo "${DISK} is mounted. Refusing to partition it." >&2
-  exit 1
-fi
+# findmnt's device argument matches the exact source, so /dev/sda does not
+# match a mount of /dev/sda1 or a by-uuid path. Compare kernel device ids.
+while read -r name majmin; do
+  [[ -n "${name}" && -n "${majmin}" ]] || continue
+  if awk -v id="${majmin}" '$3 == id { found = 1 } END { exit found ? 0 : 1 }' /proc/self/mountinfo; then
+    echo "${name} (${majmin}) is mounted. Refusing to partition ${DISK}." >&2
+    exit 1
+  fi
+done < <(lsblk -nrpo NAME,MAJ:MIN "${DISK}")
 
 echo "Disks currently visible:"
 lsblk -o NAME,SIZE,TYPE,TRAN,LABEL,MOUNTPOINTS

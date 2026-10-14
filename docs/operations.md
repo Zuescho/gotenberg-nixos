@@ -50,7 +50,15 @@ systemctl status gotenberg
 scripts/check-health.sh http://127.0.0.1:3000/health
 ```
 
-Podman pulls the new digest because the image reference changed. The previous image remains until garbage collection, and the previous NixOS generation still points at the old reference.
+Podman pulls the new digest because the image reference changed. The previous image stays in `/var/lib/containers` until Podman prunes it. `nix.gc` only deletes Nix store paths and does not remove OCI images.
+
+`virtualisation.podman.autoPrune` runs `podman system prune -f --all --filter until=336h` on Sundays at 05:40. Unused images older than 14 days are deleted. The image of a running container is kept. To free space immediately after an upgrade:
+
+```bash
+sudo podman system prune -f --all --filter until=336h
+```
+
+A NixOS rollback within those 14 days still has the previous image locally. An older rollback pulls that digest again.
 
 You can override the pin without editing the module:
 

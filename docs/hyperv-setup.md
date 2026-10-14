@@ -24,7 +24,7 @@ On a workstation, clone the repository and edit `hosts/gotenberg/site.nix`:
 - `address`, `prefixLength`, `gateway`, `nameservers` — static LAN plan. The placeholders are documentation values, not a real subnet.
 - `iisSourceRanges` — CIDR or addresses of the IIS servers.
 - `adminSourceRanges` — CIDR of the machines that may SSH.
-- `adminAuthorizedKeys` — your ed25519 public key. Delete the `REPLACE_ME` key. The install script refuses to run while that marker is present.
+- `adminAuthorizedKeys` — your ed25519 public key. Delete the `REPLACE_ME` key. The install script refuses to run while that marker is still inside `adminAuthorizedKeys`.
 
 ```bash
 ssh-keygen -t ed25519 -C "gotenberg-admin"

@@ -5,7 +5,7 @@
 # HTTP / HTTPS phase switch. Everything else reads from here.
 #
 # Before the first install:
-#   1. Replace the SSH key. The comment must not stay REPLACE_ME.
+#   1. Replace the placeholder public key in adminAuthorizedKeys.
 #   2. Replace the addresses below with the LAN plan.
 #   3. Create the internal DNS A record for `fqdn`. Do not publish it publicly.
 #
