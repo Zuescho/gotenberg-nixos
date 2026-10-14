@@ -128,16 +128,15 @@ in
   virtualisation.podman = {
     enable = true;
     dockerCompat = true;
-    # nix.gc does not touch /var/lib/containers. Drop unused images older than
-    # the 14 day generation window; the running image stays because it is in use.
+    # nix.gc does not touch /var/lib/containers. `podman system prune -f`
+    # removes stopped containers and dangling images only. Do not pass --all
+    # or --filter until=: `until` matches the image build time, so the previous
+    # Gotenberg release would be deleted on the next Sunday even though that
+    # NixOS generation is still inside the 14 day rollback window.
     autoPrune = {
       enable = true;
       dates = "Sun 05:40";
-      flags = [
-        "--all"
-        "--filter"
-        "until=336h"
-      ];
+      flags = [ ];
     };
   };
 

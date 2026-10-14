@@ -259,7 +259,7 @@ sudo nix flake update nixpkgs
 sudo nixos-rebuild switch --flake /etc/nixos#gotenberg
 ```
 
-Gotenberg upgrades are a new `image.tag` and `image.digest` in `modules/gotenberg-lan.nix`, then the same `nixos-rebuild switch`. Take a production checkpoint first. Podman keeps the previous image until `podman system prune -f --all --filter until=336h` (Sundays at 05:40, or run it by hand). `nix.gc` does not delete OCI images. Garbage collection on Sundays at 05:30 deletes store paths older than 14 days.
+Gotenberg upgrades are a new `image.tag` and `image.digest` in `modules/gotenberg-lan.nix`, then the same `nixos-rebuild switch`. Take a production checkpoint first. The Sunday Podman timer runs `podman system prune -f` and leaves named images in place, so the previous tag is still local for a rollback. `nix.gc` does not delete OCI images. Garbage collection on Sundays at 05:30 deletes store paths older than 14 days. After that window, `sudo podman image prune -af` frees old images; an older rollback then pulls its digest again.
 
 Roll back the NixOS generation:
 
@@ -290,7 +290,7 @@ Start-VM -Name gotenberg
 | nginx will not start in phase 2 | Certificate or key missing, wrong mode, or a path under `/nix/store`. See [docs/tls.md](docs/tls.md) |
 | Clock jumps | Hyper-V time sync and timesyncd both stepping. Disable the Hyper-V “Time Synchronization” integration service and keep timesyncd |
 | `autoUpgrade` does nothing | The timer needs outbound HTTPS to GitHub and `cache.nixos.org`. `systemctl status nixos-upgrade.service` |
-| Disk fills up after image upgrades | `sudo podman system prune -f --all --filter until=336h`. The running image is kept |
+| Disk fills up after image upgrades | `sudo podman image prune -af` after the 14 day rollback window. The running image is kept. An older generation then re-pulls its digest |
 | `nix flake check` warns about `REPLACE_ME` | Expected on the placeholder key in git. The installed host should not warn |
 
 Evaluation of this flake warns while `adminAuthorizedKeys` still contains `REPLACE_ME`. That warning is the reminder, not a failed check.

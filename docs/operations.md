@@ -50,15 +50,21 @@ systemctl status gotenberg
 scripts/check-health.sh http://127.0.0.1:3000/health
 ```
 
-Podman pulls the new digest because the image reference changed. The previous image stays in `/var/lib/containers` until Podman prunes it. `nix.gc` only deletes Nix store paths and does not remove OCI images.
+Podman pulls the new digest because the image reference changed. `nix.gc` only deletes Nix store paths and does not remove OCI images.
 
-`virtualisation.podman.autoPrune` runs `podman system prune -f --all --filter until=336h` on Sundays at 05:40. Unused images older than 14 days are deleted. The image of a running container is kept. To free space immediately after an upgrade:
+`virtualisation.podman.autoPrune` runs `podman system prune -f` on Sundays at 05:40. That removes stopped containers and dangling images. It does not remove an image that still has a name, so the previous tag stays on disk while that NixOS generation is available.
+
+Do not add `--all` or `--filter until=`. `until` compares the image build time, not the last time a container used it. A previous Gotenberg release is already older than 14 days on the day you upgrade, so that filter deletes it on the next Sunday and a rollback has to pull the image again.
+
+A new digest on the same tag untags the previous image. The Sunday prune then treats it as dangling and removes it. Bump `image.tag` together with `image.digest` when you want the old image to remain.
+
+After the 14 day generation window, reclaim the disk with:
 
 ```bash
-sudo podman system prune -f --all --filter until=336h
+sudo podman image prune -af
 ```
 
-A NixOS rollback within those 14 days still has the previous image locally. An older rollback pulls that digest again.
+That deletes every image no container is using. A later rollback of an older generation pulls that digest again. The running image is kept.
 
 You can override the pin without editing the module:
 

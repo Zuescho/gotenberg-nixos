@@ -147,7 +147,10 @@
         && lib.assertMsg (
           gotenberg.config.systemd.services.gotenberg.serviceConfig.Restart == "always"
         ) "auto restart"
-        && lib.assertMsg gotenberg.config.virtualisation.podman.autoPrune.enable "podman prunes unused images; nix.gc does not";
+        && lib.assertMsg gotenberg.config.virtualisation.podman.autoPrune.enable "podman prunes dangling images; nix.gc does not remove OCI images"
+        && lib.assertMsg (
+          gotenberg.config.virtualisation.podman.autoPrune.flags == [ ]
+        ) "image prune must not pass --all or until=, which drops the previous pin by build time";
 
       assertText =
         name: text: patterns:
