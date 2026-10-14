@@ -1,5 +1,6 @@
-/result
-/result-*
+result
+result-*
+secrets
 *.pem
 *.key
 *.pfx

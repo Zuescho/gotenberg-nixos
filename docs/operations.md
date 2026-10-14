@@ -148,7 +148,7 @@ curl --fail --show-error \
   http://gotenberg.dueren.de/forms/pdfengines/factur-x
 ```
 
-Use `https://` and no explicit port after phase 2. Conformance levels: `MINIMUM`, `BASIC WL`, `BASIC`, `EN 16931`, `EXTENDED`, `XRECHNUNG`.
+Use `https://` and no explicit port after phase 2. Callers in this deployment send `EN 16931` or `XRECHNUNG`. Gotenberg also accepts `MINIMUM`, `BASIC WL`, `BASIC`, and `EXTENDED`. It records the level in XMP and does not Schematron-validate the XML.
 
 ## Clock
 

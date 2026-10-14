@@ -14,7 +14,8 @@ let
   nftRules = ''
     ip saddr { ${sourceList} } tcp dport { ${portList} } accept comment "${comment}"
   '';
-  iptablesRules = lib.concatMapStrings (port:
+  iptablesRules = lib.concatMapStrings (
+    port:
     lib.concatMapStrings (src: ''
       iptables -A nixos-fw -p tcp -s ${src} --dport ${toString port} -j nixos-fw-accept -m comment --comment ${comment}
     '') sources

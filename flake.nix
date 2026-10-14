@@ -98,7 +98,9 @@
             let
               vhost = host.config.services.nginx.virtualHosts.${cfg.fqdn};
             in
-            lib.any (listen: listen.addr == cfg.listenAddress && listen.port == 443 && listen.ssl == true) vhost.listen
+            lib.any (
+              listen: listen.addr == cfg.listenAddress && listen.port == 443 && listen.ssl == true
+            ) vhost.listen
             && vhost.sslCertificate == cfg.proxy.tls.certificate
             && vhost.sslCertificateKey == cfg.proxy.tls.key
           )
@@ -125,22 +127,27 @@
           cfg = cfgOf gotenberg;
           parts = fqdnParts cfg;
         in
-        lib.assertMsg (gotenberg.config.networking.hostName == lib.head parts) "hostname is the first label of fqdn"
+        lib.assertMsg (
+          gotenberg.config.networking.hostName == lib.head parts
+        ) "hostname is the first label of fqdn"
         && lib.assertMsg (
           gotenberg.config.networking.domain == lib.concatStringsSep "." (lib.tail parts)
         ) "domain is the rest of fqdn"
         && lib.assertMsg (gotenberg.config.system.stateVersion == "26.05") "stateVersion"
         && lib.assertMsg gotenberg.config.virtualisation.hypervGuest.enable "hyperv guest"
-        && lib.assertMsg (gotenberg.config.services.openssh.settings.PasswordAuthentication == false) "ssh keys only"
+        && lib.assertMsg (
+          gotenberg.config.services.openssh.settings.PasswordAuthentication == false
+        ) "ssh keys only"
         && lib.assertMsg (phase1Ok gotenberg) "phase 1 listens on the configured LAN address port 80"
         && lib.assertMsg (directShapeOk direct) "direct mode uses the host network and does not publish a port"
         && lib.assertMsg (tlsOk tls) "phase 2 listens on 443 with the configured certificate paths"
-        && lib.assertMsg ((container gotenberg).image == imageRef cfg) "container image follows services.gotenberg-lan.image"
+        && lib.assertMsg (
+          (container gotenberg).image == imageRef cfg
+        ) "container image follows services.gotenberg-lan.image"
         && lib.assertMsg (
           gotenberg.config.systemd.services.gotenberg.serviceConfig.Restart == "always"
         ) "auto restart"
-        && lib.assertMsg gotenberg.config.virtualisation.podman.autoPrune.enable
-          "podman prunes unused images; nix.gc does not";
+        && lib.assertMsg gotenberg.config.virtualisation.podman.autoPrune.enable "podman prunes unused images; nix.gc does not";
 
       assertText =
         name: text: patterns:
@@ -225,6 +232,17 @@
             ''
           );
 
+      # nixfmt --check wants real filenames. These are the Nix sources in the repo.
+      nixFiles = [
+        ./flake.nix
+        ./examples/configuration.nix
+        ./hosts/gotenberg/default.nix
+        ./hosts/gotenberg/hardware-configuration.nix
+        ./hosts/gotenberg/site.nix
+        ./modules/gotenberg-lan.nix
+        ./modules/source-filter.nix
+      ];
+
       site = import ./hosts/gotenberg/site.nix;
       proxyCfg = cfgOf gotenberg;
       directCfg = cfgOf direct;
@@ -237,6 +255,10 @@
     {
       nixosModules.gotenberg-lan = ./modules/gotenberg-lan.nix;
       nixosModules.default = self.nixosModules.gotenberg-lan;
+
+      # nixfmt 1.5 (RFC 166). nixpkgs aliases the old nixfmt-rfc-style name to
+      # pkgs.nixfmt; nixfmt-tree is the directory wrapper `nix fmt` expects.
+      formatter.${system} = pkgs.nixfmt-tree;
 
       nixosConfigurations = {
         gotenberg = gotenberg;
@@ -260,7 +282,8 @@
         );
         proxy-firewall-closed = forbidPorts "proxy-firewall-closed" gotenberg (
           lib.optionals (proxyCfg.proxy.enable && !proxyCfg.proxy.tls.enable) (
-            lib.optional (proxyCfg.port != 80 && proxyCfg.port != 443) proxyCfg.port ++ lib.optional (proxyCfg.port != 443) 443
+            lib.optional (proxyCfg.port != 80 && proxyCfg.port != 443) proxyCfg.port
+            ++ lib.optional (proxyCfg.port != 443) 443
           )
         );
         direct-flags = assertText "direct-flags" direct.config.systemd.services.gotenberg.script (
@@ -283,6 +306,18 @@
         );
         # Same closure nixos-rebuild build produces.
         system = gotenberg.config.system.build.toplevel;
+        nixfmt = pkgs.runCommand "nixfmt-check" { nativeBuildInputs = [ pkgs.nixfmt ]; } (
+          ''
+            mkdir src
+          ''
+          + lib.concatMapStrings (file: ''
+            cp ${file} src/${baseNameOf file}
+          '') nixFiles
+          + ''
+            nixfmt --check src/*
+            touch "$out"
+          ''
+        );
       };
     };
 }

@@ -1,0 +1,32 @@
+name: Bug
+description: The VM, the module, or a documented command does not work
+title: "bug: "
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: Include the phase (HTTP on port 80, direct port 3000, or HTTPS) and the command you ran.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: journalctl -u gotenberg, the curl status, or the installer message. Do not paste certificates, private keys, password hashes, or real invoice XML.
+    validations:
+      required: false
+  - type: input
+    id: commit
+    attributes:
+      label: Commit
+      description: git rev-parse HEAD on the checkout you installed
+      placeholder: 19413f1
+    validations:
+      required: false

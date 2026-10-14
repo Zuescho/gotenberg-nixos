@@ -52,7 +52,9 @@ let
   # On-box checks of the LAN URL come from this host's own address.
   firewallSources = lib.unique (
     cfg.allowedSourceRanges
-    ++ lib.optional (cfg.listenAddress != "0.0.0.0" && cfg.listenAddress != "127.0.0.1") "${cfg.listenAddress}/32"
+    ++ lib.optional (
+      cfg.listenAddress != "0.0.0.0" && cfg.listenAddress != "127.0.0.1"
+    ) "${cfg.listenAddress}/32"
   );
 
   fw = sourceFilter {
@@ -387,23 +389,23 @@ in
         TCP port ${toString cfg.port} is in networking.firewall.allowedTCPPorts,
         which accepts every source. Remove it and use allowedSourceRanges.
       ''
-      ++ lib.optional (
-        useProxy && lib.elem 80 config.networking.firewall.allowedTCPPorts
-      ) ''
+      ++ lib.optional (useProxy && lib.elem 80 config.networking.firewall.allowedTCPPorts) ''
         TCP port 80 is in networking.firewall.allowedTCPPorts. Remove it so only
         the IIS source ranges can reach the proxy.
       ''
-      ++ lib.optional (
-        cfg.proxy.tls.enable && lib.elem 443 config.networking.firewall.allowedTCPPorts
-      ) ''
+      ++ lib.optional (cfg.proxy.tls.enable && lib.elem 443 config.networking.firewall.allowedTCPPorts) ''
         TCP port 443 is in networking.firewall.allowedTCPPorts. Remove it so only
         the IIS source ranges can reach HTTPS.
       '';
 
     environment.systemPackages = [ pkgs.curl ];
 
-    networking.firewall.extraCommands = lib.mkIf (cfg.openFirewall && fw.extraCommands != "") fw.extraCommands;
-    networking.firewall.extraInputRules = lib.mkIf (cfg.openFirewall && fw.extraInputRules != "") fw.extraInputRules;
+    networking.firewall.extraCommands = lib.mkIf (
+      cfg.openFirewall && fw.extraCommands != ""
+    ) fw.extraCommands;
+    networking.firewall.extraInputRules = lib.mkIf (
+      cfg.openFirewall && fw.extraInputRules != ""
+    ) fw.extraInputRules;
 
     virtualisation.oci-containers.backend = cfg.backend;
     virtualisation.oci-containers.containers.${containerName} = {
