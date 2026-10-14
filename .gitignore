@@ -1,0 +1,7 @@
+/result
+/result-*
+*.pem
+*.key
+*.pfx
+*.p12
+.direnv/
